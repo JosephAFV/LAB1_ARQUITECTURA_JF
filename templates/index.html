@@ -48,7 +48,7 @@
           <h1 class="h3 mb-1">Resultados del modelo</h1>
           <p class="wm-muted mb-0">Revisa qué tan bien aprendió el modelo.</p>
         </div>
-        <a class="btn btn-outline-primary" href="/">
+        <a class="btn btn-outline-primary" href="{{ url_for('web.index', nuevo=1) }}">
           <i class="bi bi-arrow-left me-1"></i>Cargar otro dataset
         </a>
       </div>
@@ -97,7 +97,7 @@
           </div>
           <div class="wm-card-body">
             <form
-              action="{{ url_for('train') }}"
+              action="{{ url_for('web.train') }}"
               method="post"
               enctype="multipart/form-data"
               data-loading="Entrenando modelo…"
@@ -126,8 +126,7 @@
               <p class="small wm-muted mt-3 mb-0">
                 <i class="bi bi-info-circle me-1"></i>
                 El archivo necesita columnas con las características y una
-                columna objetivo con al menos dos clases. Se recomienda llamarla
-                <code>rain</code>.
+                columna objetivo con al menos dos clases. Debe llamarse <code>rain</code>.
               </p>
 
               <button class="btn btn-primary btn-lg w-100 mt-4" type="submit">
@@ -213,7 +212,7 @@
                 ></div>
               </div>
               <p class="metric-help">
-                De lo que anunció como positivo, cuánto lo era.
+                Precisión ponderada por la cantidad de casos de cada clase.
               </p>
             </div>
           </div>
@@ -237,7 +236,7 @@
                 ></div>
               </div>
               <p class="metric-help">
-                De los casos positivos reales, cuántos detectó.
+                Recall ponderado por la cantidad de casos de cada clase.
               </p>
             </div>
           </div>
@@ -260,7 +259,7 @@
                   style="width:{{ results.metrics.f1 }}%"
                 ></div>
               </div>
-              <p class="metric-help">Equilibrio entre precision y recall.</p>
+              <p class="metric-help">F1 de cada clase, promediado con ponderación por soporte.</p>
             </div>
           </div>
         </div>
@@ -342,10 +341,39 @@
 
         <p class="small wm-muted mt-4 mb-0 pt-3 wm-divider">
           <i class="bi bi-save me-1"></i>Modelo guardado en
-          <code>{{ results.model_path }}</code>
+          <span>el servidor. Puedes realizar una predicción o cargar otro dataset.</span>
         </p>
       </section>
       {% endif %} {% endif %}
+
+      {% if prediction_features %}
+      <section class="wm-card mt-4" aria-labelledby="t-prediccion">
+        <div class="wm-card-head"><h2 class="h5 mb-0" id="t-prediccion">Predecir lluvia</h2></div>
+        <div class="wm-card-body">
+          <p>Ingresa las características del caso que deseas evaluar. Todos los campos son obligatorios.</p>
+          <form action="{{ url_for('web.predict') }}" method="post" data-loading="Calculando predicción…">
+            <div class="row g-3">
+            {% for field in prediction_schema %}
+              <div class="col-md-6">
+                <label for="feature-{{ loop.index }}" class="form-label">{{ field.name }}</label>
+                <input id="feature-{{ loop.index }}" name="{{ field.name }}" class="form-control"
+                  type="{{ 'number' if field.numeric else 'text' }}" {% if field.numeric %}step="any"{% endif %}
+                  value="{{ form_values.get(field.name, '') }}" required>
+              </div>
+            {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Realizar predicción</button>
+          </form>
+          {% if prediction_result %}
+          <div class="wm-summary mt-3" role="status">
+            <p class="mb-0">Resultado: <strong>{{ prediction_result.label }}</strong>.
+            Probabilidad estimada de la clase predicha: <strong>{{ prediction_result.probability }}%</strong>.</p>
+          </div>
+          <p class="small wm-muted mt-2">La probabilidad del modelo no garantiza que ocurra el evento meteorológico.</p>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
     </main>
 
     <!-- ================= FOOTER ================= -->
